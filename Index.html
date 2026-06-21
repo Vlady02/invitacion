@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Keryma.exe — Una pregunta importante</title>
+
+<!-- Fuentes: Quicksand (redondeada, tierna) + JetBrains Mono (toque tech) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ============================================================
+     TOKENS DE DISEÑO
+     ============================================================ */
+  :root{
+    --bg-1:#fff3f7;
+    --bg-2:#ffe2ec;
+    --pink-soft:#ffd6e7;
+    --pink-mid:#ffa9c6;
+    --rose:#ff6f97;
+    --rose-deep:#e8487a;
+    --rose-text:#7a2547;
+    --rose-text-soft:#a55678;
+    --white:#fffbfd;
+    --shadow-card: 0 18px 40px rgba(232,72,122,.18), 0 4px 12px rgba(232,72,122,.10);
+    --shadow-btn: 0 10px 22px rgba(232,72,122,.28);
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    --radius-sm: 12px;
+    --font-display:'Quicksand', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    font-family: var(--font-display);
+    color: var(--rose-text);
+    overflow-x:hidden;
+  }
+
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 10%, var(--bg-2) 0%, transparent 45%),
+      radial-gradient(circle at 85% 90%, var(--pink-soft) 0%, transparent 50%),
+      linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 18px;
+    position:relative;
+  }
+
+  /* ============================================================
+     PARTÍCULAS FLOTANTES (corazones + glifos de código) — sutil
+     ============================================================ */
+  .float-layer{
+    position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0;
+  }
+  .float-item{
+    position:absolute;
+    font-family: var(--font-mono);
+    color: var(--pink-mid);
+    opacity:.28;
+    animation: floatUp linear infinite;
+    user-select:none;
+  }
+  @keyframes floatUp{
+    0%   { transform: translateY(110vh) rotate(0deg); opacity:0; }
+    10%  { opacity:.28; }
+    90%  { opacity:.28; }
+    100% { transform: translateY(-10vh) rotate(25deg); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .float-item{ animation: none; display:none; }
+  }
+
+  /* ============================================================
+     "VENTANA DE CONSOLA" — elemento firma del diseño
+     ============================================================ */
+  .phone{
+    position:relative; z-index:1;
+    width:100%;
+    max-width:420px;
+  }
+
+  .console-card{
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow:hidden;
+    border: 1px solid rgba(255,255,255,.6);
+  }
+
+  .console-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 14px 16px;
+    background: linear-gradient(120deg, var(--pink-soft), var(--pink-mid));
+  }
+  .console-dots{ display:flex; gap:7px; }
+  .console-dots span{
+    width:11px; height:11px; border-radius:50%;
+    background: rgba(255,255,255,.85);
+    box-shadow: inset 0 0 0 1.5px rgba(232,72,122,.35);
+  }
+  .console-dots span:nth-child(1){ background: var(--rose); }
+  .console-filename{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #8a3357;
+    background: rgba(255,255,255,.55);
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing:.2px;
+  }
+
+  /* Barra de progreso estilo "loading" */
+  .progress-wrap{
+    padding: 10px 18px 0;
+  }
+  .progress-label{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--rose-text-soft);
+    margin-bottom:6px;
+    display:flex;
+    justify-content:space-between;
+  }
+  .progress-track{
+    width:100%; height:7px;
+    background: var(--bg-2);
+    border-radius:20px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    width:0%;
+    background: linear-gradient(90deg, var(--pink-mid), var(--rose-deep));
+    border-radius:20px;
+    transition: width .5s ease;
+  }
+
+  /* ============================================================
+     PANTALLAS
+     ============================================================ */
+  .screen{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding: 28px 22px 30px;
+    gap: 16px;
+    min-height: 60vh;
+    justify-content:center;
+    animation: fadeSlide .45s ease;
+  }
+  .screen.active{ display:flex; }
+
+  @keyframes fadeSlide{
+    from{ opacity:0; transform: translateY(14px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .screen{ animation:none; }
+  }
+
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--rose-deep);
+    background: var(--bg-2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    letter-spacing:.3px;
+  }
+
+  .lead-text{
+    font-size: 16.5px;
+    line-height:1.55;
+    color: var(--rose-text-soft);
+    max-width: 320px;
+  }
+
+  h1.title{
+    font-family: var(--font-display);
+    font-weight:700;
+    font-size: clamp(28px, 8vw, 34px);
+    margin: 2px 0 2px;
+    color: var(--rose-text);
+    line-height:1.2;
+  }
+
+  .heart-emoji{ font-size: 40px; }
+
+  /* ---- Pantalla 1: botones Sí / No ---- */
+  .choice-zone{
+    position:relative;
+    width:100%;
+    min-height: 220px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 18px;
+    margin-top: 6px;
+  }
+
+  .btn{
+    font-family: var(--font-display);
+    font-weight:700;
+    font-size: 18px;
+    border:none;
+    border-radius: 50px;
+    padding: 16px 30px;
+    cursor:pointer;
+    box-shadow: var(--shadow-btn);
+    transition: transform .15s ease, box-shadow .15s ease, background .2s ease, font-size .25s ease;
+    min-height:54px;
+    min-width: 130px;
+    touch-action: manipulation;
+  }
+  .btn:active{ transform: scale(.96); }
+  .btn:focus-visible{ outline: 3px solid var(--rose-deep); outline-offset:3px; }
+
+  .btn-yes{
+    background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+    color: #fff;
+  }
+  .btn-no{
+    background: #fff;
+    color: var(--rose-deep);
+    border: 2px solid var(--pink-mid);
+    position: relative;
+    z-index: 50;
+    white-space: nowrap;
+  }
+  .btn-no.roaming{
+    position: fixed;
+    z-index: 999;
+    box-shadow: 0 14px 30px rgba(232,72,122,.30);
+  }
+
+  /* ---- Inputs estilizados ---- */
+  .field-wrap{
+    width:100%;
+    margin-top: 4px;
+  }
+  input[type="date"],
+  input[type="time"]{
+    font-family: var(--font-mono);
+    font-size: 19px;
+    color: var(--rose-text);
+    width:100%;
+    padding: 16px 18px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--pink-soft);
+    background: var(--bg-1);
+    accent-color: var(--rose-deep);
+    text-align:center;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  input[type="date"]:focus,
+  input[type="time"]:focus{
+    outline:none;
+    border-color: var(--rose-deep);
+    box-shadow: 0 0 0 4px rgba(232,72,122,.15);
+  }
+
+  /* ---- Tarjetas de actividad ---- */
+  .activity-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width:100%;
+  }
+  .activity-card{
+    background: var(--bg-1);
+    border: 2px solid var(--pink-soft);
+    border-radius: var(--radius-md);
+    padding: 18px 10px;
+    cursor:pointer;
+    font-family: var(--font-display);
+    font-weight:600;
+    font-size: 14.5px;
+    color: var(--rose-text);
+    transition: all .18s ease;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    min-height: 96px;
+    justify-content:center;
+  }
+  .activity-card .emoji{ font-size: 26px; }
+  .activity-card:active{ transform: scale(.97); }
+  .activity-card.selected{
+    background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+    color:#fff;
+    border-color: var(--rose-deep);
+    box-shadow: var(--shadow-btn);
+  }
+
+  /* ---- Botón principal de avance ---- */
+  .btn-primary{
+    background: linear-gradient(135deg, var(--rose), var(--rose-deep));
+    color:#fff;
+    font-family: var(--font-display);
+    font-weight:700;
+    font-size: 17px;
+    border:none;
+    border-radius: 50px;
+    padding: 16px 36px;
+    width:100%;
+    cursor:pointer;
+    box-shadow: var(--shadow-btn);
+    transition: transform .15s ease, opacity .2s ease;
+    min-height: 54px;
+    touch-action: manipulation;
+  }
+  .btn-primary:active{ transform: scale(.97); }
+  .btn-primary:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+  }
+  .btn-primary:focus-visible{ outline: 3px solid var(--rose-text); outline-offset:3px; }
+
+  .hint-error{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--rose-deep);
+    min-height: 16px;
+  }
+
+  /* ---- Pantalla final ---- */
+  .gif-frame{
+    width: 100%;
+    max-width: 230px;
+    border-radius: var(--radius-md);
+    overflow:hidden;
+    box-shadow: var(--shadow-card);
+    border: 3px solid #fff;
+  }
+  .gif-frame img{ width:100%; display:block; }
+
+  .summary-box{
+    background: var(--bg-1);
+    border: 2px dashed var(--pink-mid);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    font-size: 15.5px;
+    line-height:1.6;
+    color: var(--rose-text);
+  }
+  .summary-box b{ color: var(--rose-deep); }
+
+  .signature{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--rose-text-soft);
+  }
+
+  footer.tiny{
+    text-align:center;
+    margin-top: 14px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--rose-text-soft);
+    opacity:.7;
+    z-index:1;
+    position:relative;
+  }
+</style>
+</head>
+<body>
+
+<!-- Capa decorativa de corazones / glifos flotando, generada por JS -->
+<div class="float-layer" id="floatLayer"></div>
+
+<div class="phone">
+  <div class="console-card">
+
+    <!-- Barra superior estilo editor de código -->
+    <div class="console-topbar">
+      <div class="console-dots"><span></span><span></span><span></span></div>
+      <div class="console-filename" id="filenameTab">invitacion.js</div>
+    </div>
+
+    <!-- Barra de progreso -->
+    <div class="progress-wrap" id="progressWrap" style="display:none;">
+      <div class="progress-label">
+        <span id="progressText">cargando_amor.exe</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <!-- ============== PANTALLA 1: LA INVITACIÓN ============== -->
+    <section class="screen active" data-screen="1">
+      <span class="eyebrow">(toca no jeje)</span>
+      <p class="lead-text">Hola Keryma, tengo que hacerte una pregunta muy importante ...</p>
+      <h1 class="title">¿Quieres salir conmigo? <span class="heart-emoji">💕</span></h1>
+
+      <div class="choice-zone" id="choiceZone">
+        <button class="btn btn-yes" id="btnYes">Sí ❤️</button>
+        <button class="btn btn-no" id="btnNo">No 💔</button>
+      </div>
+    </section>
+
+    <!-- ============== PANTALLA 2: LA FECHA ============== -->
+    <section class="screen" data-screen="2">
+      <span class="eyebrow">es (mes-dia-año)</span>
+      <p class="lead-text"> Sabía que dirías que sí. ¿Qué día marcamos en el calendario?</p>
+
+      <div class="field-wrap">
+        <input type="date" id="inputDate">
+      </div>
+      <p class="hint-error" id="dateError"></p>
+
+      <button class="btn-primary" id="btnDateNext">Siguiente →</button>
+    </section>
+
+    <!-- ============== PANTALLA 3: LA HORA ============== -->
+    <section class="screen" data-screen="3">
+      <span class="eyebrow">es (hora:minutos am/pm)</span>
+      <p class="lead-text">¿A qué hora quieres salir?</p>
+
+      <div class="field-wrap">
+        <input type="time" id="inputTime">
+      </div>
+      <p class="hint-error" id="timeError"></p>
+
+      <button class="btn-primary" id="btnTimeNext">Siguiente →</button>
+    </section>
+
+    <!-- ============== PANTALLA 4: LA ACTIVIDAD ============== -->
+    <section class="screen" data-screen="4">
+      <span class="eyebrow">// actividad.js</span>
+      <p class="lead-text">que se te antoja hacer:</p>
+
+      <div class="activity-grid" id="activityGrid">
+        <div class="activity-card" data-activity="cine" data-label="ir al cine">
+          <span class="emoji">🍿</span> Ir al cine
+        </div>
+        <div class="activity-card" data-activity="cafe" data-label="una cita de café">
+          <span class="emoji">☕</span> Cita de Café
+        </div>
+        <div class="activity-card" data-activity="cena" data-label="una cena rica">
+          <span class="emoji">🍕</span> Cena Rica
+        </div>
+        <div class="activity-card" data-activity="caminar" data-label="caminar y platicar">
+          <span class="emoji">🚶‍♀️</span> Caminar y platicar
+        </div>
+      </div>
+      <p class="hint-error" id="activityError"></p>
+
+      <button class="btn-primary" id="btnActivityNext">Confirmar selección ✓</button>
+    </section>
+
+    <!-- ============== PANTALLA 5: FINAL ÉPICO ============== -->
+    <section class="screen" data-screen="5">
+      <span class="eyebrow">// final.js — build: success</span>
+
+      <div class="gif-frame">
+        <img src="https://media.tenor.com/T-D9017jmHcAAAAd/cat-celebrate.gif" alt="Gatito celebrando feliz">
+      </div>
+
+      <div class="summary-box" id="summaryBox">
+        <!-- Se llena dinámicamente con JS -->
+      </div>
+
+      <p class="signature">$ git commit -m "nuestra primera cita" ✔</p>
+    </section>
+
+  </div>
+  <footer class="tiny">hecho con &lt;3 y un poco de JavaScript, para Keryma</footer>
+</div>
+
+<!-- Librería de confeti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+<script>
+/* ================================================================
+   CONFIGURACIÓN GENERAL — AJUSTA AQUÍ SI LO NECESITAS
+   ================================================================ */
+  const NOMBRE = "Keryma"; // <- cámbialo si lo necesitas
+
+  // Frases divertidas que va mostrando el botón "No" en cada intento
+  const FRASES_NO = [
+    "No 💔",
+    "¿Seguraaa? 🤔",
+    "Error 404: Respuesta no encontrada",
+    "¿De verdad lo pensaste bien?",
+    "Inténtalo otra vez 😏",
+    "Acceso denegado 🚫",
+    "Me vas a romper el </corazón>",
+    "Eso no compila 👀",
+    "¡Ya casi me atrapas! jaja",
+    "NullPointerException 😭",
+    "Última oportunidad...",
+    "Sigo aquí, sigue intentando 😼"
+  ];
+
+  // Nombres de "archivo" que aparecen en la barra superior por pantalla
+  const FILENAMES = {
+    1: "invitacion.js",
+    2: "fecha.js",
+    3: "hora.js",
+    4: "actividad.js",
+    5: "final.js"
+  };
+
+  // Etiquetas de la barra de progreso
+  const PROGRESS_LABELS = {
+    2: "cargando_fecha.exe",
+    3: "cargando_hora.exe",
+    4: "cargando_actividad.exe",
+    5: "build_completo.exe"
+  };
+
+/* ================================================================
+   PARTÍCULAS FLOTANTES DE FONDO
+   ================================================================ */
+  (function initFloatingParticles(){
+    const layer = document.getElementById('floatLayer');
+    const glyphs = ['♥','{ }','</>','01','♡','<3'];
+    const total = 14;
+    for(let i=0;i<total;i++){
+      const el = document.createElement('div');
+      el.className = 'float-item';
+      el.textContent = glyphs[Math.floor(Math.random()*glyphs.length)];
+      el.style.left = Math.random()*100 + 'vw';
+      el.style.fontSize = (12 + Math.random()*16) + 'px';
+      const duration = 9 + Math.random()*10;
+      el.style.animationDuration = duration + 's';
+      el.style.animationDelay = (Math.random()*duration) + 's';
+      layer.appendChild(el);
+    }
+  })();
+
+/* ================================================================
+   NAVEGACIÓN ENTRE PANTALLAS
+   ================================================================ */
+  const screens = document.querySelectorAll('.screen');
+  const filenameTab = document.getElementById('filenameTab');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  const progressPercent = document.getElementById('progressPercent');
+
+  function goToScreen(n){
+    screens.forEach(s => s.classList.toggle('active', s.dataset.screen == n));
+    filenameTab.textContent = FILENAMES[n] || 'app.js';
+
+    if(n === 1){
+      progressWrap.style.display = 'none';
+    } else {
+      progressWrap.style.display = 'block';
+      const percent = Math.round(((n-1)/4) * 100);
+      progressFill.style.width = percent + '%';
+      progressPercent.textContent = percent + '%';
+      progressText.textContent = PROGRESS_LABELS[n] || 'app.exe';
+    }
+
+    if(n === 5){ launchFinalScreen(); }
+  }
+
+/* ================================================================
+   PANTALLA 1 — LÓGICA DEL "SÍ" / "NO"
+   ================================================================ */
+  const btnYes = document.getElementById('btnYes');
+  const btnNo  = document.getElementById('btnNo');
+  const choiceZone = document.getElementById('choiceZone');
+
+  let noAttempts = 0;
+  let yesScale = 1;
+
+  function dodgeNoButton(){
+    noAttempts++;
+
+    // Cambia la frase (cíclico)
+    const frase = FRASES_NO[noAttempts % FRASES_NO.length];
+    btnNo.textContent = frase;
+
+    // Activa modo "fixed" para poder moverse por toda la pantalla
+    btnNo.classList.add('roaming');
+
+    const btnRect = btnNo.getBoundingClientRect();
+    const margin = 16;
+    const maxX = window.innerWidth - btnRect.width - margin;
+    const maxY = window.innerHeight - btnRect.height - margin;
+
+    const randX = margin + Math.random() * Math.max(0, maxX - margin);
+    const randY = margin + Math.random() * Math.max(0, maxY - margin);
+
+    btnNo.style.left = randX + 'px';
+    btnNo.style.top  = randY + 'px';
+
+    // El botón "Sí" crece un poquito cada vez, hasta un tope
+    yesScale = Math.min(1.6, yesScale + 0.055);
+    btnYes.style.transform = `scale(${yesScale})`;
+    btnYes.style.fontSize = (18 + (yesScale-1)*14) + 'px';
+  }
+
+  // En escritorio: se mueve al pasar el cursor encima.
+  // En móvil: se mueve apenas se intenta tocar (antes de soltar el dedo).
+  btnNo.addEventListener('pointerenter', dodgeNoButton);
+  btnNo.addEventListener('touchstart', (e) => { e.preventDefault(); dodgeNoButton(); }, { passive:false });
+  btnNo.addEventListener('click', (e) => { e.preventDefault(); dodgeNoButton(); });
+
+  btnYes.addEventListener('click', () => {
+    goToScreen(2);
+  });
+
+/* ================================================================
+   PANTALLA 2 — FECHA
+   ================================================================ */
+  const inputDate = document.getElementById('inputDate');
+  const dateError = document.getElementById('dateError');
+
+  // Por defecto no permitimos fechas pasadas
+  const todayISO = new Date().toISOString().split('T')[0];
+  inputDate.setAttribute('min', todayISO);
+
+  document.getElementById('btnDateNext').addEventListener('click', () => {
+    if(!inputDate.value){
+      dateError.textContent = '⚠️ Falta un valor en el campo fecha.';
+      return;
+    }
+    dateError.textContent = '';
+    goToScreen(3);
+  });
+
+/* ================================================================
+   PANTALLA 3 — HORA
+   ================================================================ */
+  const inputTime = document.getElementById('inputTime');
+  const timeError = document.getElementById('timeError');
+
+  document.getElementById('btnTimeNext').addEventListener('click', () => {
+    if(!inputTime.value){
+      timeError.textContent = '⚠️ Falta un valor en el campo hora.';
+      return;
+    }
+    timeError.textContent = '';
+    goToScreen(4);
+  });
+
+/* ================================================================
+   PANTALLA 4 — ACTIVIDAD
+   ================================================================ */
+  const activityCards = document.querySelectorAll('.activity-card');
+  const activityError = document.getElementById('activityError');
+  let selectedActivity = null;
+  let selectedActivityLabel = null;
+
+  activityCards.forEach(card => {
+    card.addEventListener('click', () => {
+      activityCards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedActivity = card.dataset.activity;
+      selectedActivityLabel = card.dataset.label;
+      activityError.textContent = '';
+    });
+  });
+
+  document.getElementById('btnActivityNext').addEventListener('click', () => {
+    if(!selectedActivity){
+      activityError.textContent = '⚠️ Selecciona un módulo antes de continuar.';
+      return;
+    }
+    goToScreen(5);
+  });
+
+/* ================================================================
+   PANTALLA 5 — RESUMEN FINAL + CONFETI
+   ================================================================ */
+  function formatearFecha(valorISO){
+    const [y,m,d] = valorISO.split('-').map(Number);
+    const fecha = new Date(y, m-1, d);
+    const opciones = { weekday:'long', day:'numeric', month:'long' };
+    let texto = fecha.toLocaleDateString('es-ES', opciones);
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  }
+
+  function formatearHora(valorHHMM){
+    const [h,min] = valorHHMM.split(':').map(Number);
+    const periodo = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12;
+    if(h12 === 0) h12 = 12;
+    return `${h12}:${String(min).padStart(2,'0')} ${periodo}`;
+  }
+
+  let finalYaLanzado = false;
+
+  function launchFinalScreen(){
+    const fechaTexto = formatearFecha(inputDate.value);
+    const horaTexto  = formatearHora(inputTime.value);
+    const actividadTexto = selectedActivityLabel || 'una sorpresa';
+
+    document.getElementById('summaryBox').innerHTML =
+      `¡Variables guardadas exitosamente! Nos vemos el <b>${fechaTexto}</b> a las <b>${horaTexto}</b>
+       para <b>${actividadTexto}</b>.<br><br>
+       ¡No se aceptan reembolsos ni "Ctrl+Z"! Te quiero, ${NOMBRE}. ❤️`;
+
+    if(!finalYaLanzado){
+      finalYaLanzado = true;
+      dispararConfeti();
+    }
+  }
+
+  function dispararConfeti(){
+    if(typeof confetti !== 'function') return;
+    const coloresPastel = ['#ff6f97', '#ffa9c6', '#ffd6e7', '#ffffff', '#e8487a'];
+
+    const duracion = 2.2 * 1000;
+    const animEnd = Date.now() + duracion;
+
+    (function frame(){
+      confetti({
+        particleCount: 4,
+        angle: 60,
+        spread: 65,
+        origin: { x: 0 },
+        colors: coloresPastel
+      });
+      confetti({
+        particleCount: 4,
+        angle: 120,
+        spread: 65,
+        origin: { x: 1 },
+        colors: coloresPastel
+      });
+      if(Date.now() < animEnd){
+        requestAnimationFrame(frame);
+      }
+    })();
+
+    // Ráfaga inicial central
+    confetti({
+      particleCount: 90,
+      spread: 100,
+      origin: { y: 0.5 },
+      colors: coloresPastelSafe()
+    });
+
+    function coloresPastelSafe(){ return coloresPastel; }
+  }
+
+  // Estado inicial
+  goToScreen(1);
+</script>
+
+</body>
+</html>
